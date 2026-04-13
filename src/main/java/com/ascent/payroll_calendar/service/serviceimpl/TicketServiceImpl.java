@@ -1,4 +1,4 @@
-package com.ascent.payroll_calendar.serviceimpl;
+package com.ascent.payroll_calendar.service.serviceimpl;
 
 import com.ascent.payroll_calendar.dto.TicketMasterRequestDTO;
 import com.ascent.payroll_calendar.dto.TicketMasterResponseDTO;
