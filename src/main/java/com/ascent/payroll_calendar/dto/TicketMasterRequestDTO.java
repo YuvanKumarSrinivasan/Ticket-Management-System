@@ -2,15 +2,17 @@ package com.ascent.payroll_calendar.dto;
 
 import lombok.Data;
 
+import java.util.UUID;
+
 @Data
-public class TicketMasterDTO extends TicketBaseDTO {
+public class TicketMasterRequestDTO extends TicketRequestDTO {
 
     //private Long ticketId;
     private String ticketType;
 
-    private Long catalogId;
-    private Long categoryId;
-    private Long subCategoryId;
+    private UUID catalogId;
+    private UUID categoryId;
+    private UUID subCategoryId;
 
     //private Long closedBy;
 

@@ -43,6 +43,10 @@ public class TicketMaster {
     private ServiceCatalog catalog;
 
     @ManyToOne
+    @JoinColumn(name="status_id")
+    private Status status;
+
+    @ManyToOne
     @JoinColumn(name = "priority_id")
     private Priority priority;
 
@@ -58,7 +62,7 @@ public class TicketMaster {
     private UUID createdBy;
 
     @Temporal(TemporalType.TIMESTAMP)
-    @Column(name = "created_dt", nullable = false)
+    @Column(name = "created_dt", nullable = false,updatable = false)
     private Date createdDt;
 
     @ManyToOne
@@ -78,4 +82,5 @@ public class TicketMaster {
 
     @Column(name = "deep_link")
     private String deepLink;
+
 }

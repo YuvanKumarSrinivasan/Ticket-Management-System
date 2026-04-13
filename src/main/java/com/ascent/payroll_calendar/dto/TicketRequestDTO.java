@@ -2,20 +2,21 @@ package com.ascent.payroll_calendar.dto;
 
 import lombok.Data;
 
-import java.time.LocalDateTime;
-@Data
-public class TicketBaseDTO {
+import java.util.UUID;
 
-    private Long sourceId;
+@Data
+public class TicketRequestDTO {
+
+    private UUID sourceId;
     private String subject;
     private String description;
 
-    private Long statusId;
-    private Long priorityId;
-    private Long customerId;
-    private Long processorId;
+    private UUID statusId;
+    private UUID priorityId;
+    private UUID customerId;
+    private UUID processorId;
 
-    private Long slaId;
+    private UUID slaId;
 
     //private Long createdBy;
     //private LocalDateTime createdDate;
