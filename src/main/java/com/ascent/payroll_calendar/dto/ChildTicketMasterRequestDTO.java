@@ -7,7 +7,7 @@ import java.util.UUID;
 @Data
 public class ChildTicketMasterRequestDTO extends TicketRequestDTO {
 
-    private UUID childTicketId;
+    //private UUID childTicketId;
     private UUID parentTicketId;
 
     // Getters and Setters

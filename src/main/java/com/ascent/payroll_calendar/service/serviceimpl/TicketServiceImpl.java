@@ -1,8 +1,6 @@
 package com.ascent.payroll_calendar.service.serviceimpl;
 
-import com.ascent.payroll_calendar.dto.TicketMasterRequestDTO;
-import com.ascent.payroll_calendar.dto.TicketMasterResponseDTO;
-import com.ascent.payroll_calendar.dto.TicketStatusUpdateDTO;
+import com.ascent.payroll_calendar.dto.*;
 import com.ascent.payroll_calendar.entities.*;
 import com.ascent.payroll_calendar.repository.*;
 import com.ascent.payroll_calendar.service.TicketService;
@@ -14,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -41,6 +40,9 @@ public class TicketServiceImpl implements TicketService {
 
     @Autowired
     private StatusRepository statusRepository;
+
+    @Autowired
+    private ChildTicketRepository childTicketRepository;
 
 
     @Override
@@ -245,4 +247,224 @@ public class TicketServiceImpl implements TicketService {
         }
         ticketRepository.save(ticket);
     }
+
+    @Override
+    public void createChildTicket(ChildTicketMasterRequestDTO dto) {
+
+        ChildTicket ticket = new ChildTicket();
+
+        ticket.setSubject(dto.getSubject());
+        ticket.setDescription(dto.getDescription());
+        /*if (dto.getCatalogId() != null) {
+            ServiceCatalog catalog =serviceCatalogRepository.findById(dto.getCatalogId())
+                    .orElseThrow(() -> new RuntimeException("Catalog not found"));
+
+            ticket.setCatalog(catalog);
+        }*/
+        if(dto.getPriorityId() != null){
+            Priority priority=priorityRepository.findById(dto.getPriorityId())
+                    .orElseThrow(()-> new RuntimeException("Priority not found"));
+            ticket.setPriority(priority);
+        }
+
+        /*if (dto.getCategoryId() != null) {
+            Category category = categoryRepository.findById(dto.getCategoryId())
+                    .orElseThrow(() -> new RuntimeException("Category not found"));
+            ticket.setCategory(category);
+        }
+
+        if (dto.getSubCategoryId() != null) {
+            SubCategory subCategory = subCategoryRepository.findById(dto.getSubCategoryId())
+                    .orElseThrow(() -> new RuntimeException("SubCategory not found"));
+            ticket.setSubCategory(subCategory);
+        }*/
+
+        if (dto.getSourceId() != null) {
+            TicketSource source = ticketSourceRepository.findById(dto.getSourceId())
+                    .orElseThrow(() -> new RuntimeException("Source not found"));
+            ticket.setSource(source);
+        }
+
+        if (dto.getSlaId() != null) {
+            Sla sla = slaRepository.findById(dto.getSlaId())
+                    .orElseThrow(() -> new RuntimeException("SLA not found"));
+            ticket.setSla(sla);
+        }
+
+        if (dto.getStatusId() != null){
+            Status status=statusRepository.findById(dto.getStatusId())
+                    .orElseThrow(()-> new RuntimeException("Status not found"));
+            ticket.setStatus(status);
+        }
+        if (dto.getParentTicketId() != null){
+            TicketMaster ticketmaster=ticketRepository.findById(dto.getParentTicketId())
+                    .orElseThrow(()-> new RuntimeException("Parent Ticket not found"));
+            ticket.setParentTicket(ticketmaster);
+        }
+
+        ticket.setCustomerId(dto.getCustomerId());
+        ticket.setProcessorId(dto.getProcessorId());
+        ticket.setCreatedDt(new Date());
+        childTicketRepository.save(ticket);
+
+    }
+    @Override
+    public List<ChildTicketMasterResponseDTO> getChildTickets(UUID ticketmasterid) {
+
+        if (!ticketRepository.existsById(ticketmasterid)) {
+            throw new RuntimeException("Ticket Master not found");
+        }
+
+        List<ChildTicket> childTickets =
+                childTicketRepository.findByParentTicket_TicketId(ticketmasterid);
+
+        return childTickets.stream()
+                .map(this::mapToChildDTO)
+                .toList();
+    }
+
+
+    private ChildTicketMasterResponseDTO mapToChildDTO(ChildTicket child) {
+
+        ChildTicketMasterResponseDTO dto = new ChildTicketMasterResponseDTO();
+
+        dto.setChildTicketId(child.getChildTicketId());
+        dto.setSubject(child.getSubject());
+        dto.setDescription(child.getDescription());
+
+        if (child.getParentTicket() != null) {
+            dto.setParentTicketId(child.getParentTicket().getTicketId());
+        }
+
+        if (child.getSource() != null) {
+            dto.setSourceName(String.valueOf(child.getSource().getSourceName()));
+        }
+
+        if (child.getPriority() != null) {
+            dto.setPriorityName(child.getPriority().getPriorityName());
+        }
+
+        if (child.getStatus() != null) {
+            dto.setStatusName(String.valueOf(child.getStatus().getStatusValue()));
+        }
+
+        dto.setCustomerId(child.getCustomerId());
+        dto.setProcessorId(child.getProcessorId());
+
+        dto.setCreatedDt(child.getCreatedDt());
+        dto.setDuedt(child.getDueDt());
+        dto.setClosedDt(child.getClosedDt());
+
+        return dto;
+    }
+
+    @Override
+    public ChildTicketMasterResponseDTO getChildTicketById(UUID ticketMasterId, UUID childticketMasterId) {
+        ChildTicket child = childTicketRepository
+                .findByChildTicketIdAndParentTicket_TicketId(childticketMasterId, ticketMasterId)
+                .orElseThrow(() -> new RuntimeException("Child Ticket not found for given Master Ticket"));
+
+        return mapToChildDTO(child);
+    }
+
+    @Override
+    public void updateChildTicket(UUID ticketMasterId,
+                                  UUID childTicketMasterId,
+                                  ChildTicketMasterRequestDTO request) {
+        if (!ticketRepository.existsById(ticketMasterId)) {
+            throw new RuntimeException("Ticket Master not found");
+        }
+        if (!childTicketRepository.existsById(childTicketMasterId)) {
+            throw new RuntimeException("Child Ticket Master not found");
+        }
+
+        ChildTicket child = childTicketRepository
+                .findByChildTicketIdAndParentTicket_TicketId(childTicketMasterId, ticketMasterId)
+                .orElseThrow(() -> new RuntimeException("Child Ticket not found for the given Ticket Master"));
+
+        if (request.getSubject() != null) {
+            child.setSubject(request.getSubject());
+        }
+
+        if (request.getDescription() != null) {
+            child.setDescription(request.getDescription());
+        }
+
+        if (request.getCustomerId() != null) {
+            child.setCustomerId(request.getCustomerId());
+        }
+
+        if (request.getProcessorId() != null) {
+            child.setProcessorId(request.getProcessorId());
+        }
+
+        /*if (request.getDueDt() != null) {
+            child.setDueDt(request.getDueDt());
+        }
+
+        if (request.getClosedDt() != null) {
+            child.setClosedDt(request.getClosedDt());
+        }
+
+        if (request.getClosedBy() != null) {
+            child.setClosedBy(request.getClosedBy());
+        }*/
+
+
+
+        if (request.getSourceId() != null) {
+            TicketSource source = ticketSourceRepository.findById(request.getSourceId())
+                    .orElseThrow(() -> new RuntimeException("Source not found"));
+            child.setSource(source);
+        }
+
+        if (request.getPriorityId() != null) {
+            Priority priority = priorityRepository.findById(request.getPriorityId())
+                    .orElseThrow(() -> new RuntimeException("Priority not found"));
+            child.setPriority(priority);
+        }
+
+        if (request.getStatusId() != null) {
+            Status status = statusRepository.findById(request.getStatusId())
+                    .orElseThrow(() -> new RuntimeException("Status not found"));
+            child.setStatus(status);
+        }
+
+        if (request.getSlaId() != null) {
+            Sla sla = slaRepository.findById(request.getSlaId())
+                    .orElseThrow(() -> new RuntimeException("SLA not found"));
+            child.setSla(sla);
+        }
+        childTicketRepository.save(child);
+    }
+
+    @Override
+    public void updateChildTicketStatus(UUID ticketMasterId,
+                                        UUID childticketMasterId,
+                                        TicketStatusUpdateDTO request) {
+        if (!ticketRepository.existsById(ticketMasterId)) {
+            throw new RuntimeException("Ticket Master not found");
+        }
+        if (!childTicketRepository.existsById(childticketMasterId)) {
+            throw new RuntimeException("Child Ticket Master not found");
+        }
+
+        ChildTicket child = childTicketRepository
+                .findByChildTicketIdAndParentTicket_TicketId(childticketMasterId, ticketMasterId)
+                .orElseThrow(() -> new RuntimeException("Child Ticket not found for the given Ticket Master"));
+
+        if (request.getTicketId() != null &&
+                !request.getTicketId().equals(ticketMasterId)) {
+            throw new RuntimeException("Ticket ID mismatch");
+        }
+
+        Status status = statusRepository.findById(request.getStatusId())
+                .orElseThrow(() -> new RuntimeException("Status not found"));
+
+        child.setStatus(status);
+
+        childTicketRepository.save(child);
+    }
+
+
 }
